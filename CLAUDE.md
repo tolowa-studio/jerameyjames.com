@@ -19,12 +19,10 @@ Pure HTML/CSS — single `index.html` + images. No build step.
 
 ## Files
 - `index.html` — full site (52KB)
-- `hero.jpg` — 1.88MB ⚠️ needs compression (target <200KB)
-- `portrait.jpg` — 353KB ⚠️ needs compression
+- `hero.jpg` — 158KB (compressed, q82)
+- `portrait.jpg` — 180KB (compressed, q82)
 
 ## Next steps (MOTION upgrade per Notion hub §6)
-- Compress hero.jpg and portrait.jpg (massive LCP impact)
-- Replace the HubSpot meetings links with https://cal.com/jeramey-james (HubSpot is retired)
 - Install Umami analytics
 - Add contact form → Twenty CRM
 - Ghost newsletter setup
