@@ -1,0 +1,42 @@
+name: CI
+
+# Builds the image and checks it serves the site the way Cloudflare Pages did.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t site .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name site -p 8080:8080 site
+          for i in $(seq 1 20); do
+            curl -sf http://127.0.0.1:8080/healthz >/dev/null && break
+            sleep 1
+          done
+          check() {
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8080$1")
+            echo "$1 -> ${code} (want $2)"
+            test "${code}" = "$2"
+          }
+          check / 200
+          check /hero.jpg 200
+          check /portrait.jpg 200
+          check /healthz 200
+          check /index.html 308
+          check /does-not-exist 200
+          curl -s http://127.0.0.1:8080/ | cmp - index.html
+          curl -s http://127.0.0.1:8080/hero.jpg | cmp - hero.jpg
+          curl -s -o /dev/null -D - http://127.0.0.1:8080/index.html | grep -i '^location: /\s*$'
