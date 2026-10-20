@@ -37,6 +37,15 @@ jobs:
           check /healthz 200
           check /index.html 308
           check /does-not-exist 200
+          check /index.html.bak 200
+          check /index.html?x=1 308
+          for path in / /does-not-exist /index.html; do
+            headers=$(curl -s -o /dev/null -D - "http://127.0.0.1:8080${path}")
+            echo "${headers}" | grep -qi '^x-content-type-options: nosniff'
+            echo "${headers}" | grep -qi '^referrer-policy: strict-origin-when-cross-origin'
+            echo "${headers}" | grep -qi '^cache-control: public, max-age=0, must-revalidate'
+          done
+          curl -s -o /dev/null -D - -H 'Accept-Encoding: gzip' -H 'Via: 1.1 google' http://127.0.0.1:8080/ | grep -qi '^content-encoding: gzip'
           curl -s http://127.0.0.1:8080/ | cmp - index.html
           curl -s http://127.0.0.1:8080/does-not-exist | cmp - index.html
           curl -s http://127.0.0.1:8080/hero.jpg | cmp - hero.jpg

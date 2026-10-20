@@ -17,6 +17,14 @@ WIF_PROJECT_NUMBER="${WIF_PROJECT_NUMBER:-895468771800}"
 DEPLOYER_SA="jerameyjames-com-deployer@${GCP_PROJECT}.iam.gserviceaccount.com"
 RUNTIME_SA="jerameyjames-com-runtime@${GCP_PROJECT}.iam.gserviceaccount.com"
 
+SERVICE_NAME="${SERVICE_NAME:-jerameyjames-com}"
+PLACEHOLDER_IMAGE="us-docker.pkg.dev/cloudrun/container/hello"
+
+# Assumes the shared provider maps attribute.repository=assertion.repository.
+echo "== APIs =="
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
+  iamcredentials.googleapis.com --project="${GCP_PROJECT}"
+
 echo "== Artifact Registry (${AR_REPO}) =="
 gcloud artifacts repositories describe "${AR_REPO}" \
   --project="${GCP_PROJECT}" --location="${GCP_REGION}" >/dev/null 2>&1 \
@@ -40,14 +48,34 @@ gcloud iam service-accounts add-iam-policy-binding "${DEPLOYER_SA}" \
   --role="roles/iam.workloadIdentityUser" \
   --member="${PRINCIPAL}" >/dev/null
 
-echo "== Deployer: push images, deploy Cloud Run (run.admin so deploys can keep the service public), act as runtime SA =="
+echo "== Service (${SERVICE_NAME}): create once with a placeholder image, public =="
+# Creating it here lets the deployer hold run.developer on this one service
+# instead of run.admin on the shared project. CI replaces the image.
+gcloud run services describe "${SERVICE_NAME}" \
+  --project="${GCP_PROJECT}" --region="${GCP_REGION}" >/dev/null 2>&1 \
+  || gcloud run deploy "${SERVICE_NAME}" \
+    --project="${GCP_PROJECT}" --region="${GCP_REGION}" \
+    --image="${PLACEHOLDER_IMAGE}" \
+    --service-account="${RUNTIME_SA}" \
+    --min-instances=0 --max-instances=1 --memory=128Mi \
+    --no-allow-unauthenticated --quiet
+gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+  --project="${GCP_PROJECT}" --region="${GCP_REGION}" \
+  --member="allUsers" --role="roles/run.invoker" >/dev/null
+
+echo "== Deployer: push images, deploy this service only, act as runtime SA =="
 gcloud artifacts repositories add-iam-policy-binding "${AR_REPO}" \
   --project="${GCP_PROJECT}" --location="${GCP_REGION}" \
   --member="serviceAccount:${DEPLOYER_SA}" \
   --role="roles/artifactregistry.writer" >/dev/null
-gcloud projects add-iam-policy-binding "${GCP_PROJECT}" \
+gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+  --project="${GCP_PROJECT}" --region="${GCP_REGION}" \
   --member="serviceAccount:${DEPLOYER_SA}" \
-  --role="roles/run.admin" --condition=None >/dev/null
+  --role="roles/run.developer" >/dev/null
+# Earlier revisions of this script granted project-wide run.admin; drop it.
+gcloud projects remove-iam-policy-binding "${GCP_PROJECT}" \
+  --member="serviceAccount:${DEPLOYER_SA}" \
+  --role="roles/run.admin" --condition=None >/dev/null 2>&1 || true
 gcloud iam service-accounts add-iam-policy-binding "${RUNTIME_SA}" \
   --project="${GCP_PROJECT}" \
   --member="serviceAccount:${DEPLOYER_SA}" \

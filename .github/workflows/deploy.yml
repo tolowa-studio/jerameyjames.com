@@ -52,7 +52,6 @@ jobs:
             --image "${IMAGE}" \
             --service-account "${RUNTIME_SA}" \
             --port 8080 \
-            --allow-unauthenticated \
             --min-instances 0 \
             --max-instances 2 \
             --memory 128Mi \
@@ -71,3 +70,9 @@ jobs:
             test "${code}" = "200"
           done
           curl -s "${URL}/" | grep -q "<title>"
+          code=$(curl -s -o /dev/null -w "%{http_code}" "${URL}/index.html")
+          echo "/index.html -> ${code}"
+          test "${code}" = "308"
+          code=$(curl -s -o /dev/null -w "%{http_code}" "${URL}/does-not-exist")
+          echo "/does-not-exist -> ${code}"
+          test "${code}" = "200"
