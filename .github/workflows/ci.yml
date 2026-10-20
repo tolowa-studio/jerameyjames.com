@@ -38,5 +38,6 @@ jobs:
           check /index.html 308
           check /does-not-exist 200
           curl -s http://127.0.0.1:8080/ | cmp - index.html
+          curl -s http://127.0.0.1:8080/does-not-exist | cmp - index.html
           curl -s http://127.0.0.1:8080/hero.jpg | cmp - hero.jpg
           curl -s -o /dev/null -D - http://127.0.0.1:8080/index.html | grep -i '^location: /\s*$'
