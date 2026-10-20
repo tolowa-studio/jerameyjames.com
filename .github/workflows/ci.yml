@@ -23,7 +23,7 @@ jobs:
         run: |
           docker run -d --name site -p 8080:8080 site
           for i in $(seq 1 20); do
-            curl -sf http://127.0.0.1:8080/healthz >/dev/null && break
+            curl -sf http://127.0.0.1:8080/health >/dev/null && break
             sleep 1
           done
           check() {
@@ -34,7 +34,7 @@ jobs:
           check / 200
           check /hero.jpg 200
           check /portrait.jpg 200
-          check /healthz 200
+          check /health 200
           check /index.html 308
           check /does-not-exist 200
           check /index.html.bak 200
