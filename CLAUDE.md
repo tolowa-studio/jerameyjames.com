@@ -8,7 +8,7 @@ Jeramey James personal brand / founder signal site. Static HTML — dark termina
 - Image: `nginxinc/nginx-unprivileged` on port 8080 (`Dockerfile`, `nginx.conf`); unknown paths fall back to `index.html`, `/index.html` redirects to `/`, as Cloudflare Pages did
 - Deploys: every push to `main` runs `.github/workflows/deploy.yml` (shared WIF provider `tolowa-studio-github`, deployer SA `jerameyjames-com-deployer@`, runtime SA `jerameyjames-com-runtime@` with no roles)
 - One-time setup: `scripts/gcp-provision.sh` (idempotent)
-- CI: `.github/workflows/ci.yml` builds the image and smoke-tests it on every PR
+- CI: `.github/workflows/ci.yml` fails the PR if Vercel config returns (`scripts/check-no-vercel.sh`), then builds the image and smoke-tests it
 - DNS: Bunny (Porkbun is registrar only); apex + `www` point at the Cloud Run domain mapping
 - Git: github.com/tolowa-studio/jerameyjames.com
 - Production: jerameyjames.com

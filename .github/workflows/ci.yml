@@ -16,6 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: No Vercel residue (TOL-655)
+        run: |
+          scripts/check-no-vercel.test.sh
+          scripts/check-no-vercel.sh
+
       - name: Build image
         run: docker build -t site .
 
