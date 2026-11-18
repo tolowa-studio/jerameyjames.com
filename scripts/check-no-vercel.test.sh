@@ -13,10 +13,14 @@ for residue in vercel.json vercel.ts .vercelignore; do
   if "$check" "$tmp" >/dev/null 2>&1; then echo "FAIL: $residue not caught" >&2; exit 1; fi
   rm "$tmp/$residue"
 done
+# a dangling symlink must not slip through (-e follows the link and sees nothing)
+ln -s does-not-exist "$tmp/vercel.json"
+if "$check" "$tmp" >/dev/null 2>&1; then echo "FAIL: dangling vercel.json symlink not caught" >&2; exit 1; fi
+rm "$tmp/vercel.json"
 mkdir "$tmp/.vercel"
 if "$check" "$tmp" >/dev/null 2>&1; then echo "FAIL: .vercel/ not caught" >&2; exit 1; fi
 rmdir "$tmp/.vercel"
 
 # the real repo must be clean too
 "$check" >/dev/null || { echo "FAIL: repo has Vercel residue" >&2; exit 1; }
-echo "ok: check-no-vercel catches vercel.json, vercel.ts, .vercelignore, .vercel/"
+echo "ok: check-no-vercel catches vercel.json, vercel.ts, .vercelignore, .vercel/, dangling symlinks"
